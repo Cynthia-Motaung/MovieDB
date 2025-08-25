@@ -1,0 +1,1406 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Reel Trailers</title>
+        <link rel="icon" type="image/x-icon" href="images/video.png" />
+        <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    </head>
+    <body>
+        <div id="root"></div>
+
+        <script type="text/babel">
+            const { useState, useEffect } = React;
+
+            // API Configuration
+            const API_KEY = "e456acced27df62cb52ca9da643010b4"; // Public demo key (replace with your own)
+            const BASE_URL = "https://api.themoviedb.org/3";
+            const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+            const BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/w1280";
+            const PLACEHOLDER_IMAGE = "https://via.placeholder.com/500x750/1a2432/7a8ca5?text=No+Image";
+
+            // Helper function to fetch data from API
+            const fetchData = async (url) => {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return await response.json();
+                } catch (error) {
+                    console.error("Error fetching data:", error);
+                    return null;
+                }
+            };
+
+            // All available genres
+            const movieGenres = [
+                { id: "", name: "All" },
+                { id: 28, name: "Action" },
+                { id: 12, name: "Adventure" },
+                { id: 35, name: "Comedy" },
+                { id: 80, name: "Crime" },
+                { id: 18, name: "Drama" },
+                { id: 14, name: "Fantasy" },
+                { id: 27, name: "Horror" },
+                { id: 878, name: "Sci-Fi" }
+            ];
+
+            // TV Show genres
+            const tvGenres = [
+                { id: "", name: "All" },
+                { id: 10759, name: "Action & Adventure" },
+                { id: 16, name: "Animation" },
+                { id: 35, name: "Comedy" },
+                { id: 80, name: "Crime" },
+                { id: 99, name: "Documentary" },
+                { id: 18, name: "Drama" },
+                { id: 10751, name: "Family" },
+                { id: 10762, name: "Kids" },
+                { id: 9648, name: "Mystery" },
+                { id: 10763, name: "News" },
+                { id: 10764, name: "Reality" },
+                { id: 10765, name: "Sci-Fi & Fantasy" },
+                { id: 10766, name: "Soap" },
+                { id: 10767, name: "Talk" },
+                { id: 10768, name: "War & Politics" },
+                { id: 37, name: "Western" }
+            ];
+
+            function NavBar({ currentPage, setCurrentPage }) {
+                const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+                const toggleMenu = () => {
+                    setIsMenuOpen(!isMenuOpen);
+                };
+
+                const handleNavigation = (page) => {
+                    setCurrentPage(page);
+                    setIsMenuOpen(false);
+                };
+
+                return (
+                    <nav className="navbar">
+                        <div className="nav-container">
+                            <div className="logo" onClick={() => handleNavigation("home")}>
+                                <img src="images/video.png" alt="Reel Trailers Logo" className="logo-icon" />
+                                Reel Trailers
+                            </div>
+
+                            <button className="mobile-menu-btn" onClick={toggleMenu}>
+                                <i className={isMenuOpen ? "fas fa-times" : "fas fa-bars"}></i>
+                            </button>
+
+                            <ul className={`nav-links ${isMenuOpen ? "active" : ""}`}>
+                                <li>
+                                    <a
+                                        className={currentPage === "home" ? "active" : ""}
+                                        onClick={() => handleNavigation("home")}>
+                                        Home
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        className={currentPage === "movies" ? "active" : ""}
+                                        onClick={() => handleNavigation("movies")}>
+                                        Movies
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        className={currentPage === "tvshows" ? "active" : ""}
+                                        onClick={() => handleNavigation("tvshows")}>
+                                        TV Shows
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        className={currentPage === "celebs" ? "active" : ""}
+                                        onClick={() => handleNavigation("celebs")}>
+                                        Celebs
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        className={currentPage === "news" ? "active" : ""}
+                                        onClick={() => handleNavigation("news")}>
+                                        News
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        className={currentPage === "about" ? "active" : ""}
+                                        onClick={() => handleNavigation("about")}>
+                                        About
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+                );
+            }
+
+            // Trailer Modal Component
+            function TrailerModal({ item, type, onClose }) {
+                const [trailerKey, setTrailerKey] = useState(null);
+                const [loading, setLoading] = useState(true);
+
+                useEffect(() => {
+                    const fetchTrailer = async () => {
+                        setLoading(true);
+                        try {
+                            // Fetch videos for the movie or TV show
+                            const url = `${BASE_URL}/${type}/${item.id}/videos?api_key=${API_KEY}&language=en-US`;
+                            const data = await fetchData(url);
+
+                            if (data && data.results) {
+                                // Find the first trailer
+                                const trailer = data.results.find(
+                                    (video) => video.type === "Trailer" && video.site === "YouTube"
+                                );
+
+                                if (trailer) {
+                                    setTrailerKey(trailer.key);
+                                } else {
+                                    setTrailerKey(null);
+                                }
+                            } else {
+                                setTrailerKey(null);
+                            }
+                        } catch (error) {
+                            console.error("Error fetching trailer:", error);
+                            setTrailerKey(null);
+                        } finally {
+                            setLoading(false);
+                        }
+                    };
+
+                    fetchTrailer();
+                }, [item.id, type]);
+
+                return (
+                    <div className="trailer-modal" onClick={onClose}>
+                        <div className="trailer-modal-content" onClick={(e) => e.stopPropagation()}>
+                            <button className="trailer-modal-close" onClick={onClose}>
+                                <i className="fas fa-times"></i>
+                            </button>
+
+                            {loading ? (
+                                <div className="loading">
+                                    <i className="fas fa-spinner fa-spin"></i> Loading trailer...
+                                </div>
+                            ) : trailerKey ? (
+                                <>
+                                    <div className="trailer-video-container">
+                                        <iframe
+                                            src={`https://www.youtube.com/embed/${trailerKey}`}
+                                            title={`${item.title || item.name} Trailer`}
+                                            allowFullScreen></iframe>
+                                    </div>
+                                    <div className="trailer-info">
+                                        <h2 className="trailer-title">{item.title || item.name}</h2>
+                                        <p className="trailer-overview">
+                                            {item.overview || "No description available."}
+                                        </p>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="no-trailer">
+                                    <i className="fas fa-video-slash"></i>
+                                    <h2>No Trailer Available</h2>
+                                    <p>
+                                        Sorry, we couldn't find a trailer for this{" "}
+                                        {type === "movie" ? "movie" : "TV show"}.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            }
+
+            // MovieCard component for displaying individual movies
+            function MovieCard({ movie, onMovieClick }) {
+                return (
+                    <div className="movie-card" onClick={() => onMovieClick(movie)}>
+                        <img
+                            src={movie.poster_path ? `${IMAGE_BASE_URL}${movie.poster_path}` : PLACEHOLDER_IMAGE}
+                            alt={movie.title}
+                            className="movie-poster"
+                        />
+                        <div className="movie-info">
+                            <h3 className="movie-title">{movie.title}</h3>
+                            <div className="movie-details">
+                                <span>{movie.release_date ? new Date(movie.release_date).getFullYear() : "N/A"}</span>
+                                <span className="movie-rating">
+                                    <i className="fas fa-star"></i>{" "}
+                                    {movie.vote_average ? movie.vote_average.toFixed(1) : "N/A"}
+                                </span>
+                            </div>
+                            {movie.genre_names && movie.genre_names.length > 0 && (
+                                <span className="movie-genre">{movie.genre_names[0]}</span>
+                            )}
+                        </div>
+                    </div>
+                );
+            }
+
+            // TVShowCard component for displaying TV shows
+            function TVShowCard({ show, onShowClick }) {
+                return (
+                    <div className="movie-card" onClick={() => onShowClick(show)}>
+                        <img
+                            src={show.poster_path ? `${IMAGE_BASE_URL}${show.poster_path}` : PLACEHOLDER_IMAGE}
+                            alt={show.name}
+                            className="movie-poster"
+                        />
+                        <div className="movie-info">
+                            <h3 className="movie-title">{show.name}</h3>
+                            <div className="movie-details">
+                                <span>{show.first_air_date ? new Date(show.first_air_date).getFullYear() : "N/A"}</span>
+                                <span className="movie-rating">
+                                    <i className="fas fa-star"></i>{" "}
+                                    {show.vote_average ? show.vote_average.toFixed(1) : "N/A"}
+                                </span>
+                            </div>
+                            {show.genre_names && show.genre_names.length > 0 && (
+                                <span className="movie-genre">{show.genre_names[0]}</span>
+                            )}
+                        </div>
+                    </div>
+                );
+            }
+
+            // CelebCard component for displaying celebrities
+            function CelebCard({ celeb, onCelebClick }) {
+                return (
+                    <div className="celeb-card" onClick={() => onCelebClick(celeb)}>
+                        <img
+                            src={celeb.profile_path ? `${IMAGE_BASE_URL}${celeb.profile_path}` : PLACEHOLDER_IMAGE}
+                            alt={celeb.name}
+                            className="celeb-image"
+                        />
+                        <div className="celeb-name">{celeb.name}</div>
+                    </div>
+                );
+            }
+
+            // CelebDetail component for displaying detailed celebrity information
+            function CelebDetail({ celeb, onClose }) {
+                const [celebDetails, setCelebDetails] = useState(null);
+                const [knownFor, setKnownFor] = useState([]);
+                const [loading, setLoading] = useState(true);
+
+                useEffect(() => {
+                    const fetchCelebDetails = async () => {
+                        setLoading(true);
+
+                        // Fetch detailed celebrity information
+                        const detailsData = await fetchData(
+                            `${BASE_URL}/person/${celeb.id}?api_key=${API_KEY}&language=en-US`
+                        );
+                        setCelebDetails(detailsData);
+
+                        // Fetch celebrity's combined credits (movies and TV shows)
+                        const creditsData = await fetchData(
+                            `${BASE_URL}/person/${celeb.id}/combined_credits?api_key=${API_KEY}&language=en-US`
+                        );
+
+                        if (creditsData && creditsData.cast) {
+                            // Sort by popularity and get top 10
+                            const sortedCredits = creditsData.cast
+                                .sort((a, b) => b.popularity - a.popularity)
+                                .slice(0, 10);
+                            setKnownFor(sortedCredits);
+                        }
+
+                        setLoading(false);
+                    };
+
+                    fetchCelebDetails();
+                }, [celeb.id]);
+
+                if (loading) {
+                    return (
+                        <div className="modal-overlay">
+                            <div className="modal-content">
+                                <button className="modal-close" onClick={onClose}>
+                                    <i className="fas fa-times"></i>
+                                </button>
+                                <div className="loading">
+                                    <i className="fas fa-spinner fa-spin"></i> Loading celebrity details...
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="modal-overlay" onClick={onClose}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <button className="modal-close" onClick={onClose}>
+                                <i className="fas fa-times"></i>
+                            </button>
+
+                            <div className="celeb-detail">
+                                <div className="celeb-detail-header">
+                                    <img
+                                        src={
+                                            celebDetails.profile_path
+                                                ? `${IMAGE_BASE_URL}${celebDetails.profile_path}`
+                                                : PLACEHOLDER_IMAGE
+                                        }
+                                        alt={celebDetails.name}
+                                        className="celeb-detail-image"
+                                    />
+                                    <div className="celeb-detail-info">
+                                        <h2 className="celeb-detail-name">{celebDetails.name}</h2>
+
+                                        <div className="celeb-detail-stats">
+                                            <div className="celeb-stat">
+                                                <div className="stat-value">
+                                                    {celebDetails.popularity?.toFixed(0) || "N/A"}
+                                                </div>
+                                                <div className="stat-label">Popularity</div>
+                                            </div>
+
+                                            <div className="celeb-stat">
+                                                <div className="stat-value">{knownFor.length}</div>
+                                                <div className="stat-label">Known For</div>
+                                            </div>
+
+                                            {celebDetails.birthday && (
+                                                <div className="celeb-stat">
+                                                    <div className="stat-value">
+                                                        {new Date().getFullYear() -
+                                                            new Date(celebDetails.birthday).getFullYear()}
+                                                    </div>
+                                                    <div className="stat-label">Age</div>
+                                                </div>
+                                            )}
+
+                                            {celebDetails.place_of_birth && (
+                                                <div className="celeb-stat">
+                                                    <div className="stat-value" style={{ fontSize: "16px" }}>
+                                                        {celebDetails.place_of_birth}
+                                                    </div>
+                                                    <div className="stat-label">Birthplace</div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="celeb-detail-bio">
+                                            <h3>Biography</h3>
+                                            <p>
+                                                {celebDetails.biography || "No biography available for this celebrity."}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {knownFor.length > 0 && (
+                                    <div className="celeb-detail-movies">
+                                        <h3>Known For</h3>
+                                        <div className="known-for-grid">
+                                            {knownFor.map((item) => (
+                                                <div key={item.id} className="known-for-item">
+                                                    <img
+                                                        src={
+                                                            item.poster_path
+                                                                ? `${IMAGE_BASE_URL}${item.poster_path}`
+                                                                : PLACEHOLDER_IMAGE
+                                                        }
+                                                        alt={item.title || item.name}
+                                                        className="known-for-poster"
+                                                    />
+                                                    <div className="known-for-title">{item.title || item.name}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // NewsCard component for displaying news
+            function NewsCard({ news }) {
+                return (
+                    <div className="news-card">
+                        <img src={news.urlToImage || PLACEHOLDER_IMAGE} alt={news.title} className="news-image" />
+                        <div className="news-content">
+                            <div className="news-date">{new Date(news.publishedAt).toLocaleDateString()}</div>
+                            <h3 className="news-title">{news.title}</h3>
+                            <p className="news-excerpt">{news.description || "No description available"}</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Home Page Component - ENHANCED VERSION
+            function HomePage({ setCurrentPage }) {
+                const [featuredMovie, setFeaturedMovie] = useState(null);
+                const [popularMovies, setPopularMovies] = useState([]);
+                const [trendingMovies, setTrendingMovies] = useState([]);
+                const [news, setNews] = useState([]);
+                const [loading, setLoading] = useState(true);
+                const [selectedItem, setSelectedItem] = useState(null);
+                const [itemType, setItemType] = useState(null);
+
+                useEffect(() => {
+                    const fetchHomeData = async () => {
+                        setLoading(true);
+
+                        try {
+                            // Fetch featured movie (most popular)
+                            const popularData = await fetchData(
+                                `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=en-US&page=1`
+                            );
+
+                            if (popularData && popularData.results) {
+                                setFeaturedMovie(popularData.results[0]);
+                                setPopularMovies(popularData.results.slice(1, 7));
+                            }
+
+                            // Fetch trending movies
+                            const trendingData = await fetchData(`${BASE_URL}/trending/movie/week?api_key=${API_KEY}`);
+
+                            if (trendingData && trendingData.results) {
+                                setTrendingMovies(trendingData.results.slice(0, 10));
+                            }
+
+                            // Fetch entertainment news
+                            const newsData = await fetchData(
+                                `https://newsapi.org/v2/everything?q=movie+OR+celebrity+OR+hollywood+OR+film&sortBy=publishedAt&language=en&pageSize=3&apiKey=d8da3a8959174c739e799678ea39519e`
+                            );
+
+                            if (newsData && newsData.articles) {
+                                setNews(newsData.articles.slice(0, 3));
+                            }
+                        } catch (error) {
+                            console.error("Error fetching home data:", error);
+                        } finally {
+                            setLoading(false);
+                        }
+                    };
+
+                    fetchHomeData();
+                }, []);
+
+                const handleMovieClick = (movie) => {
+                    setSelectedItem(movie);
+                    setItemType("movie");
+                };
+
+                const handleCloseTrailer = () => {
+                    setSelectedItem(null);
+                    setItemType(null);
+                };
+
+                if (loading) {
+                    return (
+                        <div className="page-content">
+                            <div className="loading">
+                                <i className="fas fa-spinner fa-spin"></i> Loading content...
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="page-content">
+                        {/* Hero Section with Featured Movie */}
+                        {featuredMovie && (
+                            <div className="hero-section">
+                                <div
+                                    className="hero-backdrop"
+                                    style={{
+                                        backgroundImage: `url(${BACKDROP_BASE_URL}${featuredMovie.backdrop_path})`
+                                    }}></div>
+                                <div className="hero-content">
+                                    <h1 className="hero-title">{featuredMovie.title}</h1>
+                                    <p className="hero-description">
+                                        {featuredMovie.overview && featuredMovie.overview.length > 150
+                                            ? `${featuredMovie.overview.substring(0, 150)}...`
+                                            : featuredMovie.overview}
+                                    </p>
+                                    <div className="hero-rating">
+                                        <i className="fas fa-star"></i>
+                                        <span>{featuredMovie.vote_average.toFixed(1)} Rating</span>
+                                    </div>
+                                    <div className="hero-buttons">
+                                        <button
+                                            className="hero-btn play-btn"
+                                            onClick={() => {
+                                                setSelectedItem(featuredMovie);
+                                                setItemType("movie");
+                                            }}>
+                                            <i className="fas fa-play"></i> Play Trailer
+                                        </button>
+                                        <button className="hero-btn info-btn">
+                                            <i className="fas fa-info-circle"></i> More Info
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Trending Now Section */}
+                        <div className="trending-section">
+                            <div className="section-header">
+                                <h2 className="section-title">
+                                    <i className="fas fa-fire"></i> Trending Now
+                                </h2>
+                                <a href="#" className="view-all">
+                                    View All <i className="fas fa-chevron-right"></i>
+                                </a>
+                            </div>
+                            <div className="trending-scroll">
+                                {trendingMovies.map((movie) => (
+                                    <div
+                                        key={movie.id}
+                                        className="trending-item"
+                                        onClick={() => {
+                                            setSelectedItem(movie);
+                                            setItemType("movie");
+                                        }}>
+                                        <img
+                                            src={
+                                                movie.poster_path
+                                                    ? `${IMAGE_BASE_URL}${movie.poster_path}`
+                                                    : PLACEHOLDER_IMAGE
+                                            }
+                                            alt={movie.title}
+                                            className="trending-poster"
+                                        />
+                                        <div className="trending-info">
+                                            <h3 className="trending-title">{movie.title}</h3>
+                                            <div className="trending-details">
+                                                <span>
+                                                    {movie.release_date
+                                                        ? new Date(movie.release_date).getFullYear()
+                                                        : "N/A"}
+                                                </span>
+                                                <span className="movie-rating">
+                                                    <i className="fas fa-star"></i> {movie.vote_average.toFixed(1)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Popular Movies Section */}
+                        <div className="popular-section">
+                            <div className="section-header">
+                                <h2 className="section-title">
+                                    <i className="fas fa-film"></i> Popular Movies
+                                </h2>
+                                <a href="#" className="view-all">
+                                    View All <i className="fas fa-chevron-right"></i>
+                                </a>
+                            </div>
+                            <div className="movies-grid">
+                                {popularMovies.map((movie) => (
+                                    <MovieCard key={movie.id} movie={movie} onMovieClick={handleMovieClick} />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Stats Section */}
+                        <div className="stats-section">
+                            <h2 className="section-title">
+                                <i className="fas fa-chart-line"></i> Reel Trailers Stats
+                            </h2>
+                            <div className="stats-grid">
+                                <div className="stat-card">
+                                    <div className="stat-icon">
+                                        <i className="fas fa-film"></i>
+                                    </div>
+                                    <div className="stat-value">10,000+</div>
+                                    <div className="stat-label">Movies</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-icon">
+                                        <i className="fas fa-tv"></i>
+                                    </div>
+                                    <div className="stat-value">5,000+</div>
+                                    <div className="stat-label">TV Shows</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* News Section */}
+                        <div className="news-section">
+                            <div className="section-header">
+                                <h2 className="section-title">
+                                    <i className="fas fa-newspaper"></i> Latest News
+                                </h2>
+                                <a
+                                    href="#"
+                                    className="view-all"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        window.scrollTo(0, 0);
+                                        setCurrentPage("news");
+                                    }}>
+                                    View All <i className="fas fa-chevron-right"></i>
+                                </a>
+                            </div>
+                            <div className="news-grid">
+                                {news.map((item, index) => (
+                                    <div key={index} className="news-card">
+                                        <img
+                                            src={item.urlToImage || PLACEHOLDER_IMAGE}
+                                            alt={item.title}
+                                            className="news-image"
+                                        />
+                                        <div className="news-content">
+                                            <div className="news-date">
+                                                {new Date(item.publishedAt).toLocaleDateString()}
+                                            </div>
+                                            <h3 className="news-title">{item.title}</h3>
+                                            <p className="news-excerpt">
+                                                {item.description || "No description available"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {selectedItem && (
+                            <TrailerModal item={selectedItem} type={itemType} onClose={handleCloseTrailer} />
+                        )}
+                    </div>
+                );
+            }
+
+            // Movies Page Component
+            function MoviesPage() {
+                const [movies, setMovies] = useState([]);
+                const [searchQuery, setSearchQuery] = useState("");
+                const [selectedGenre, setSelectedGenre] = useState("");
+                const [loading, setLoading] = useState(false);
+                const [currentPage, setCurrentPage] = useState(1);
+                const [totalPages, setTotalPages] = useState(1);
+                const [selectedMovie, setSelectedMovie] = useState(null);
+                const moviesPerPage = 6;
+
+                // Fetch movies based on search query and selected genre
+                useEffect(() => {
+                    const fetchMovies = async () => {
+                        setLoading(true);
+
+                        let url;
+                        if (searchQuery) {
+                            url = `${BASE_URL}/search/movie?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(searchQuery)}&page=${currentPage}`;
+                        } else if (selectedGenre) {
+                            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=${selectedGenre}&page=${currentPage}`;
+                        } else {
+                            url = `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=en-US&page=${currentPage}`;
+                        }
+
+                        const data = await fetchData(url);
+
+                        if (data && data.results) {
+                            // Get genre names for each movie
+                            const moviesWithGenres = await Promise.all(
+                                data.results.map(async (movie) => {
+                                    const genreNames = movie.genre_ids
+                                        .map((genreId) => {
+                                            const genre = movieGenres.find((g) => g.id === genreId);
+                                            return genre ? genre.name : "";
+                                        })
+                                        .filter((name) => name !== "");
+
+                                    return {
+                                        ...movie,
+                                        genre_names: genreNames
+                                    };
+                                })
+                            );
+
+                            setMovies(moviesWithGenres);
+                            setTotalPages(data.total_pages > 10 ? 10 : data.total_pages);
+                        } else {
+                            setMovies([]);
+                        }
+
+                        setLoading(false);
+                    };
+
+                    fetchMovies();
+                }, [searchQuery, selectedGenre, currentPage]);
+
+                const handleSearch = (e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                };
+
+                const handleGenreChange = (e) => {
+                    setSelectedGenre(e.target.value);
+                    setCurrentPage(1);
+                };
+
+                const handleMovieClick = (movie) => {
+                    setSelectedMovie(movie);
+                };
+
+                const handleCloseTrailer = () => {
+                    setSelectedMovie(null);
+                };
+
+                const nextPage = () => {
+                    if (currentPage < totalPages) {
+                        setCurrentPage(currentPage + 1);
+                    }
+                };
+
+                const prevPage = () => {
+                    if (currentPage > 1) {
+                        setCurrentPage(currentPage - 1);
+                    }
+                };
+
+                return (
+                    <div className="page-content">
+                        <div className="page-header">
+                            <h1 className="page-title">Movies</h1>
+                            <p>Discover the latest and greatest movies</p>
+                        </div>
+
+                        <div className="search-container">
+                            <input
+                                type="text"
+                                className="search-input"
+                                placeholder="Search movies..."
+                                value={searchQuery}
+                                onChange={handleSearch}
+                            />
+                            <select className="genre-filter" value={selectedGenre} onChange={handleGenreChange}>
+                                {movieGenres.map((genre) => (
+                                    <option key={genre.id} value={genre.id}>
+                                        {genre.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {loading ? (
+                            <div className="loading">
+                                <i className="fas fa-spinner fa-spin"></i> Loading movies...
+                            </div>
+                        ) : movies.length === 0 ? (
+                            <div className="no-results">
+                                <i className="fas fa-search" style={{ fontSize: "48px", marginBottom: "15px" }}></i>
+                                <h2>No movies found</h2>
+                                <p>Try a different search term or browse by a different genre.</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="movies-grid">
+                                    {movies.map((movie) => (
+                                        <MovieCard key={movie.id} movie={movie} onMovieClick={handleMovieClick} />
+                                    ))}
+                                </div>
+
+                                <div className="pagination">
+                                    <button onClick={prevPage} disabled={currentPage === 1}>
+                                        <i className="fas fa-chevron-left"></i> Previous
+                                    </button>
+                                    <span style={{ color: "#7a8ca5", padding: "10px 15px" }}>
+                                        Page {currentPage} of {totalPages}
+                                    </span>
+                                    <button onClick={nextPage} disabled={currentPage === totalPages}>
+                                        Next <i className="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
+                        {selectedMovie && (
+                            <TrailerModal item={selectedMovie} type="movie" onClose={handleCloseTrailer} />
+                        )}
+                    </div>
+                );
+            }
+
+            // TV Shows Page Component
+            function TVShowsPage() {
+                const [shows, setShows] = useState([]);
+                const [searchQuery, setSearchQuery] = useState("");
+                const [selectedGenre, setSelectedGenre] = useState("");
+                const [loading, setLoading] = useState(false);
+                const [currentPage, setCurrentPage] = useState(1);
+                const [totalPages, setTotalPages] = useState(1);
+                const [selectedShow, setSelectedShow] = useState(null);
+
+                // Fetch TV shows based on search query and selected genre
+                useEffect(() => {
+                    const fetchTVShows = async () => {
+                        setLoading(true);
+
+                        let url;
+                        if (searchQuery) {
+                            url = `${BASE_URL}/search/tv?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(searchQuery)}&page=${currentPage}`;
+                        } else if (selectedGenre) {
+                            url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=${selectedGenre}&page=${currentPage}`;
+                        } else {
+                            url = `${BASE_URL}/tv/popular?api_key=${API_KEY}&language=en-US&page=${currentPage}`;
+                        }
+
+                        const data = await fetchData(url);
+
+                        if (data && data.results) {
+                            // Get genre names for each show
+                            const showsWithGenres = await Promise.all(
+                                data.results.map(async (show) => {
+                                    const genreNames = show.genre_ids
+                                        .map((genreId) => {
+                                            const genre = tvGenres.find((g) => g.id === genreId);
+                                            return genre ? genre.name : "";
+                                        })
+                                        .filter((name) => name !== "");
+
+                                    return {
+                                        ...show,
+                                        genre_names: genreNames
+                                    };
+                                })
+                            );
+
+                            setShows(showsWithGenres);
+                            setTotalPages(data.total_pages > 10 ? 10 : data.total_pages);
+                        } else {
+                            setShows([]);
+                        }
+
+                        setLoading(false);
+                    };
+
+                    fetchTVShows();
+                }, [searchQuery, selectedGenre, currentPage]);
+
+                const handleSearch = (e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                };
+
+                const handleGenreChange = (e) => {
+                    setSelectedGenre(e.target.value);
+                    setCurrentPage(1);
+                };
+
+                const handleShowClick = (show) => {
+                    setSelectedShow(show);
+                };
+
+                const handleCloseTrailer = () => {
+                    setSelectedShow(null);
+                };
+
+                const nextPage = () => {
+                    if (currentPage < totalPages) {
+                        setCurrentPage(currentPage + 1);
+                    }
+                };
+
+                const prevPage = () => {
+                    if (currentPage > 1) {
+                        setCurrentPage(currentPage - 1);
+                    }
+                };
+
+                return (
+                    <div className="page-content">
+                        <div className="page-header">
+                            <h1 className="page-title">TV Shows</h1>
+                            <p>Discover amazing TV shows</p>
+                        </div>
+
+                        <div className="search-container">
+                            <input
+                                type="text"
+                                className="search-input"
+                                placeholder="Search TV shows..."
+                                value={searchQuery}
+                                onChange={handleSearch}
+                            />
+                            <select className="genre-filter" value={selectedGenre} onChange={handleGenreChange}>
+                                {tvGenres.map((genre) => (
+                                    <option key={genre.id} value={genre.id}>
+                                        {genre.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {loading ? (
+                            <div className="loading">
+                                <i className="fas fa-spinner fa-spin"></i> Loading TV shows...
+                            </div>
+                        ) : shows.length === 0 ? (
+                            <div className="no-results">
+                                <i className="fas fa-search" style={{ fontSize: "48px", marginBottom: "15px" }}></i>
+                                <h2>No TV shows found</h2>
+                                <p>Try a different search term or browse by a different genre.</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="movies-grid">
+                                    {shows.map((show) => (
+                                        <TVShowCard key={show.id} show={show} onShowClick={handleShowClick} />
+                                    ))}
+                                </div>
+
+                                <div className="pagination">
+                                    <button onClick={prevPage} disabled={currentPage === 1}>
+                                        <i className="fas fa-chevron-left"></i> Previous
+                                    </button>
+                                    <span style={{ color: "##7a8ca5", padding: "10px 15px" }}>
+                                        Page {currentPage} of {totalPages}
+                                    </span>
+                                    <button onClick={nextPage} disabled={currentPage === totalPages}>
+                                        Next <i className="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
+                        {selectedShow && <TrailerModal item={selectedShow} type="tv" onClose={handleCloseTrailer} />}
+                    </div>
+                );
+            }
+
+            // Celebs Page Component
+            function CelebsPage() {
+                const [celebs, setCelebs] = useState([]);
+                const [loading, setLoading] = useState(false);
+                const [currentPage, setCurrentPage] = useState(1);
+                const [totalPages, setTotalPages] = useState(1);
+                const [selectedCeleb, setSelectedCeleb] = useState(null);
+
+                // Fetch popular celebrities
+                useEffect(() => {
+                    const fetchCelebs = async () => {
+                        setLoading(true);
+                        const data = await fetchData(
+                            `${BASE_URL}/person/popular?api_key=${API_KEY}&language=en-US&page=${currentPage}`
+                        );
+
+                        if (data && data.results) {
+                            setCelebs(data.results);
+                            setTotalPages(data.total_pages > 10 ? 10 : data.total_pages);
+                        } else {
+                            setCelebs([]);
+                        }
+                        setLoading(false);
+                    };
+
+                    fetchCelebs();
+                }, [currentPage]);
+
+                const handleCelebClick = (celeb) => {
+                    setSelectedCeleb(celeb);
+                };
+
+                const handleCloseCelebDetail = () => {
+                    setSelectedCeleb(null);
+                };
+
+                const nextPage = () => {
+                    if (currentPage < totalPages) {
+                        setCurrentPage(currentPage + 1);
+                    }
+                };
+
+                const prevPage = () => {
+                    if (currentPage > 1) {
+                        setCurrentPage(currentPage - 1);
+                    }
+                };
+
+                return (
+                    <div className="page-content">
+                        <div className="page-header">
+                            <h1 className="page-title">Celebrities</h1>
+                            <p>Explore your favorite celebrities</p>
+                        </div>
+
+                        {loading ? (
+                            <div className="loading">
+                                <i className="fas fa-spinner fa-spin"></i> Loading celebrities...
+                            </div>
+                        ) : (
+                            <>
+                                <div className="celeb-grid">
+                                    {celebs.map((celeb) => (
+                                        <CelebCard key={celeb.id} celeb={celeb} onCelebClick={handleCelebClick} />
+                                    ))}
+                                </div>
+
+                                <div className="pagination">
+                                    <button onClick={prevPage} disabled={currentPage === 1}>
+                                        <i className="fas fa-chevron-left"></i> Previous
+                                    </button>
+                                    <span style={{ color: "#7a8ca5", padding: "10px 15px" }}>
+                                        Page {currentPage} of {totalPages}
+                                    </span>
+                                    <button onClick={nextPage} disabled={currentPage === totalPages}>
+                                        Next <i className="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
+                        {selectedCeleb && <CelebDetail celeb={selectedCeleb} onClose={handleCloseCelebDetail} />}
+                    </div>
+                );
+            }
+
+            // News Page Component
+            function NewsPage() {
+                const [news, setNews] = useState([]);
+                const [loading, setLoading] = useState(true);
+                const [error, setError] = useState(null);
+                const [currentPage, setCurrentPage] = useState(1);
+                const [totalResults, setTotalResults] = useState(0);
+                const pageSize = 6; // Number of news items per page
+
+                useEffect(() => {
+                    const fetchNews = async () => {
+                        setLoading(true);
+                        setError(null);
+
+                        try {
+                            // Using NewsAPI with your key
+                            const API_KEY = "d8da3a8959174c739e799678ea39519e"; // Your NewsAPI key
+                            const url = `https://newsapi.org/v2/everything?q=movie+OR+celebrity+OR+hollywood+OR+film&sortBy=publishedAt&language=en&pageSize=${pageSize}&page=${currentPage}&apiKey=${API_KEY}`;
+
+                            const response = await fetch(url);
+                            const data = await response.json();
+
+                            if (data.status === "ok") {
+                                setNews(data.articles);
+                                setTotalResults(data.totalResults);
+                            } else {
+                                throw new Error(data.message || "Failed to fetch news");
+                            }
+                        } catch (error) {
+                            console.error("Error fetching news:", error);
+                            setError("Failed to load news. Please try again later.");
+                        } finally {
+                            setLoading(false);
+                        }
+                    };
+
+                    fetchNews();
+                }, [currentPage]);
+
+                // Calculate total pages
+                const totalPages = Math.ceil(totalResults / pageSize);
+
+                // Change page
+                const paginate = (pageNumber) => {
+                    if (pageNumber > 0 && pageNumber <= totalPages) {
+                        setCurrentPage(pageNumber);
+                        window.scrollTo(0, 0);
+                    }
+                };
+
+                return (
+                    <div className="page-content">
+                        <div className="page-header">
+                            <h1 className="page-title">Movie News</h1>
+                            <p>Latest updates from the entertainment world</p>
+                        </div>
+
+                        {loading ? (
+                            <div className="loading">
+                                <i className="fas fa-spinner fa-spin"></i> Loading latest news...
+                            </div>
+                        ) : error ? (
+                            <div className="error-message">
+                                <i className="fas fa-exclamation-triangle"></i>
+                                <p>{error}</p>
+                                <button onClick={() => window.location.reload()} className="retry-button">
+                                    Try Again
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="news-grid">
+                                    {news.length > 0 ? (
+                                        news.map((newsItem, index) => <NewsCard key={index} news={newsItem} />)
+                                    ) : (
+                                        <div className="no-results">
+                                            <i className="fas fa-search"></i>
+                                            <h2>No news articles found</h2>
+                                            <p>Try again later</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {totalPages > 1 && (
+                                    <div className="pagination">
+                                        <button
+                                            onClick={() => paginate(currentPage - 1)}
+                                            disabled={currentPage === 1}
+                                            className="pagination-btn">
+                                            Previous
+                                        </button>
+
+                                        {/* Show first page and ellipsis if needed */}
+                                        {currentPage > 2 && (
+                                            <>
+                                                <button onClick={() => paginate(1)}>1</button>
+                                                {currentPage > 3 && <span className="pagination-ellipsis">...</span>}
+                                            </>
+                                        )}
+
+                                        {/* Show current page and surrounding pages */}
+                                        {[currentPage - 1, currentPage, currentPage + 1].map(
+                                            (page) =>
+                                                page > 0 &&
+                                                page <= totalPages && (
+                                                    <button
+                                                        key={page}
+                                                        onClick={() => paginate(page)}
+                                                        className={page === currentPage ? "active" : ""}>
+                                                        {page}
+                                                    </button>
+                                                )
+                                        )}
+
+                                        {/* Show last page and ellipsis if needed */}
+                                        {currentPage < totalPages - 1 && (
+                                            <>
+                                                {currentPage < totalPages - 2 && (
+                                                    <span className="pagination-ellipsis">...</span>
+                                                )}
+                                                <button onClick={() => paginate(totalPages)}>{totalPages}</button>
+                                            </>
+                                        )}
+
+                                        <button
+                                            onClick={() => paginate(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                            className="pagination-btn">
+                                            Next
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                );
+            }
+
+            function Footer() {
+                return (
+                    <footer className="site-footer">
+                        <div className="footer-content">
+                            <div className="footer-section about">
+                                <h3>About Reel Trailers</h3>
+                                <p>
+                                    Your ultimate destination for the latest movie trailers & tv shows, news, and
+                                    celebrity buzz. We bring the world of cinema to your fingertips.
+                                </p>
+                            </div>
+                            <div className="footer-section links">
+                                <h3>Quick Links</h3>
+                                <ul>
+                                    <li>
+                                        <a href="#">Home</a>
+                                    </li>
+                                    <li>
+                                        <a href="#">Movies</a>
+                                    </li>
+                                    <li>
+                                        <a href="#">TV Shows</a>
+                                    </li>
+                                    <li>
+                                        <a href="#">News</a>
+                                    </li>
+                                    <li>
+                                        <a href="#">About</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="footer-bottom">
+                            <p>&copy; 2025 Reel Trailers. All Rights Reserved.</p>
+                        </div>
+                    </footer>
+                );
+            }
+
+            // About Page Component
+            function AboutPage() {
+                return (
+                    <div className="container">
+                        <div className="about-hero">
+                            <h1>About Reel Trailers</h1>
+                            <p>
+                                Your ultimate destination for discovering, exploring, and enjoying movies and TV shows
+                                from around the world.
+                            </p>
+                        </div>
+
+                        <div className="features-grid">
+                            <div className="feature-card">
+                                <div className="feature-icon">
+                                    <i className="fas fa-database"></i>
+                                </div>
+                                <h3 className="feature-title">Extensive Database</h3>
+                                <p className="feature-description">
+                                    Access information on thousands of movies and TV shows with a powerful API,
+                                    including detailed metadata, cast information, and user reviews.
+                                </p>
+                            </div>
+
+                            <div className="feature-card">
+                                <div className="feature-icon">
+                                    <i className="fas fa-search"></i>
+                                </div>
+                                <h3 className="feature-title">Powerful Search</h3>
+                                <p className="feature-description">
+                                    Find exactly what you're looking for with our advanced search and filtering options
+                                    by genre & name.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="team-section">
+                            <h2 className="section-title">
+                                <i className="fas fa-users"></i> Our Team
+                            </h2>
+                            <div className="team-grid">
+                                <div className="team-member">
+                                    <img
+                                        src="images/Kea.JPEG"
+                                        alt="Keamogetsoe Sele"
+                                        alt="Keamogetsoe Sele"
+                                        className="team-image"
+                                    />
+                                    <div className="team-info">
+                                        <h3 className="team-name">Keamogetsoe Sele</h3>
+                                        <div className="team-role">Team Leader & Front-End Developer</div>
+                                    </div>
+                                </div>
+
+                                <div className="team-member">
+                                    <img src="images/Mlu.jpg" alt="Mlungisi Mvubu" className="team-image" />
+                                    <div className="team-info">
+                                        <h3 className="team-name">Mlungisi Mvubu</h3>
+                                        <div className="team-role">API Management & Back-End Developer</div>
+                                    </div>
+                                </div>
+
+                                <div className="team-member">
+                                    <img src="images/Cyn.jpg" alt="Cynthia Motaung" className="team-image" />
+                                    <div className="team-info">
+                                        <h3 className="team-name">Cynthia Motaung</h3>
+                                        <div className="team-role">Documentation & Front-End Developer</div>
+                                    </div>
+                                </div>
+
+                                <div className="team-member">
+                                    <img
+                                        src="images/Siyamthanda.jpg"
+                                        alt="Siyamthanda Dlakavu"
+                                        className="team-image"
+                                    />
+                                    <div className="team-info">
+                                        <h3 className="team-name">Siyamthanda Dlakavu</h3>
+                                        <div className="team-role">UI/UX Designer & Front-End Developer</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="tech-stack">
+                            <h2 className="section-title">
+                                <i className="fas fa-code"></i> Technology Stack
+                            </h2>
+                            <div className="tech-grid">
+                                <div className="tech-item">
+                                    <div className="tech-icon">
+                                        <i className="fab fa-react"></i>
+                                    </div>
+                                    <div className="tech-name">React</div>
+                                </div>
+
+                                <div className="tech-item">
+                                    <div className="tech-icon">
+                                        <i className="fab fa-js"></i>
+                                    </div>
+                                    <div className="tech-name">JavaScript</div>
+                                </div>
+
+                                <div className="tech-item">
+                                    <div className="tech-icon">
+                                        <i className="fab fa-css3-alt"></i>
+                                    </div>
+                                    <div className="tech-name">CSS3</div>
+                                </div>
+
+                                <div className="tech-item">
+                                    <div className="tech-icon">
+                                        <i className="fab fa-html5"></i>
+                                    </div>
+                                    <div className="tech-name">HTML5</div>
+                                </div>
+                            </div>
+                        </div>
+                        <footer />
+                    </div>
+                );
+            }
+
+            // Main App component
+            function App() {
+                const [currentPage, setCurrentPage] = useState("home");
+
+                const renderPage = () => {
+                    switch (currentPage) {
+                        case "home":
+                            return <HomePage setCurrentPage={setCurrentPage} />;
+                        case "movies":
+                            return <MoviesPage />;
+                        case "tvshows":
+                            return <TVShowsPage />;
+                        case "celebs":
+                            return <CelebsPage />;
+                        case "news":
+                            return <NewsPage />;
+                        case "about":
+                            return <AboutPage />;
+                        default:
+                            return <HomePage setCurrentPage={setCurrentPage} />;
+                    }
+                };
+
+                return (
+                    <div>
+                        <NavBar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+                        <div className="container">{renderPage()}</div>
+                        <Footer />
+                    </div>
+                );
+            }
+
+            // Render the App
+            ReactDOM.render(<App />, document.getElementById("root"));
+        </script>
+    </body>
+</html>
