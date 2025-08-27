@@ -127,13 +127,6 @@
                                 </li>
                                 <li>
                                     <a
-                                        className={currentPage === "news" ? "active" : ""}
-                                        onClick={() => handleNavigation("news")}>
-                                        News
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
                                         className={currentPage === "about" ? "active" : ""}
                                         onClick={() => handleNavigation("about")}>
                                         About
@@ -425,20 +418,6 @@
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            // NewsCard component for displaying news
-            function NewsCard({ news }) {
-                return (
-                    <div className="news-card">
-                        <img src={news.urlToImage || PLACEHOLDER_IMAGE} alt={news.title} className="news-image" />
-                        <div className="news-content">
-                            <div className="news-date">{new Date(news.publishedAt).toLocaleDateString()}</div>
-                            <h3 className="news-title">{news.title}</h3>
-                            <p className="news-excerpt">{news.description || "No description available"}</p>
                         </div>
                     </div>
                 );
@@ -1067,143 +1046,7 @@
                 );
             }
 
-            // News Page Component
-            function NewsPage() {
-                const [news, setNews] = useState([]);
-                const [loading, setLoading] = useState(true);
-                const [error, setError] = useState(null);
-                const [currentPage, setCurrentPage] = useState(1);
-                const [totalResults, setTotalResults] = useState(0);
-                const pageSize = 6; // Number of news items per page
-
-                useEffect(() => {
-                    const fetchNews = async () => {
-                        setLoading(true);
-                        setError(null);
-
-                        try {
-                            // Using NewsAPI with your key
-                            const API_KEY = "d8da3a8959174c739e799678ea39519e"; // Your NewsAPI key
-                            const url = `https://newsapi.org/v2/everything?q=movie+OR+celebrity+OR+hollywood+OR+film&sortBy=publishedAt&language=en&pageSize=${pageSize}&page=${currentPage}&apiKey=${API_KEY}`;
-
-                            const response = await fetch(url);
-                            const data = await response.json();
-
-                            if (data.status === "ok") {
-                                setNews(data.articles);
-                                setTotalResults(data.totalResults);
-                            } else {
-                                throw new Error(data.message || "Failed to fetch news");
-                            }
-                        } catch (error) {
-                            console.error("Error fetching news:", error);
-                            setError("Failed to load news. Please try again later.");
-                        } finally {
-                            setLoading(false);
-                        }
-                    };
-
-                    fetchNews();
-                }, [currentPage]);
-
-                // Calculate total pages
-                const totalPages = Math.ceil(totalResults / pageSize);
-
-                // Change page
-                const paginate = (pageNumber) => {
-                    if (pageNumber > 0 && pageNumber <= totalPages) {
-                        setCurrentPage(pageNumber);
-                        window.scrollTo(0, 0);
-                    }
-                };
-
-                return (
-                    <div className="page-content">
-                        <div className="page-header">
-                            <h1 className="page-title">Movie News</h1>
-                            <p>Latest updates from the entertainment world</p>
-                        </div>
-
-                        {loading ? (
-                            <div className="loading">
-                                <i className="fas fa-spinner fa-spin"></i> Loading latest news...
-                            </div>
-                        ) : error ? (
-                            <div className="error-message">
-                                <i className="fas fa-exclamation-triangle"></i>
-                                <p>{error}</p>
-                                <button onClick={() => window.location.reload()} className="retry-button">
-                                    Try Again
-                                </button>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="news-grid">
-                                    {news.length > 0 ? (
-                                        news.map((newsItem, index) => <NewsCard key={index} news={newsItem} />)
-                                    ) : (
-                                        <div className="no-results">
-                                            <i className="fas fa-search"></i>
-                                            <h2>No news articles found</h2>
-                                            <p>Try again later</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {totalPages > 1 && (
-                                    <div className="pagination">
-                                        <button
-                                            onClick={() => paginate(currentPage - 1)}
-                                            disabled={currentPage === 1}
-                                            className="pagination-btn">
-                                            Previous
-                                        </button>
-
-                                        {/* Show first page and ellipsis if needed */}
-                                        {currentPage > 2 && (
-                                            <>
-                                                <button onClick={() => paginate(1)}>1</button>
-                                                {currentPage > 3 && <span className="pagination-ellipsis">...</span>}
-                                            </>
-                                        )}
-
-                                        {/* Show current page and surrounding pages */}
-                                        {[currentPage - 1, currentPage, currentPage + 1].map(
-                                            (page) =>
-                                                page > 0 &&
-                                                page <= totalPages && (
-                                                    <button
-                                                        key={page}
-                                                        onClick={() => paginate(page)}
-                                                        className={page === currentPage ? "active" : ""}>
-                                                        {page}
-                                                    </button>
-                                                )
-                                        )}
-
-                                        {/* Show last page and ellipsis if needed */}
-                                        {currentPage < totalPages - 1 && (
-                                            <>
-                                                {currentPage < totalPages - 2 && (
-                                                    <span className="pagination-ellipsis">...</span>
-                                                )}
-                                                <button onClick={() => paginate(totalPages)}>{totalPages}</button>
-                                            </>
-                                        )}
-
-                                        <button
-                                            onClick={() => paginate(currentPage + 1)}
-                                            disabled={currentPage === totalPages}
-                                            className="pagination-btn">
-                                            Next
-                                        </button>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-                );
-            }
+            
 
             function Footer() {
                 return (
