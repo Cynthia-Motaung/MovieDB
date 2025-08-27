@@ -26,59 +26,53 @@ https://img.shields.io/badge/React-18.2.0-blue https://img.shields.io/badge/Lice
   - A modern web browser with JavaScript enabled
   - Internet connection (for API calls)
 
-## Installation
+## 📥 Installation
 * Clone the repository:
-   - bash
-git clone https://github.com/Cynthia-Motaung/MovieDB
-Navigate to the project directory:
+   - bash: git clone https://github.com/Cynthia-Motaung/MovieDB
 
+* Navigate to the project directory:
+  - bash: cd reel-trailers
+
+* Open index.html in your web browser or use a local server:
   - bash
-cd reel-trailers
-Open index.html in your web browser or use a local server:
 
-  - bash
-# Using Python
-python -m http.server 8000
+### Using Python
+  - python -m http.server 8000
 
-# Using Node.js
-npx serve
-Visit http://localhost:8000 in your browser
+### Using Node.js
+  - npx serve
+  - Visit http://localhost:8000 in your browser
 
-## 🔧 Configuration
+### 🔧 Configuration
 The application uses The Movie Database (TMDB) API for movie data. To use your own API key:
 * Get a free API key from TMDB.
 
 Replace the API_KEY constant in the JavaScript code:
+  - javascript
+  - const API_KEY = "your_api_key_here";
 
-javascript
-const API_KEY = "your_api_key_here";
-🎮 How to Use
-Navigation: Use the top navigation bar to switch between sections
+### 🎮 How to Use
+* Navigation: Use the top navigation bar to switch between sections.
+* Search: Use the search bar to find specific movies or TV shows.
+* Filter: Use genre filters to narrow down results.
+* View Details: Click on any movie, TV show, or celebrity card to view more information.
+* Watch Trailers: Click the play button or card to watch available trailers.
+* Browse News: Check the News section for the latest entertainment updates.
 
-Search: Use the search bar to find specific movies or TV shows
-
-Filter: Use genre filters to narrow down results
-
-View Details: Click on any movie, TV show, or celebrity card to view more information
-
-Watch Trailers: Click the play button or card to watch available trailers
-
-Browse News: Check the News section for the latest entertainment updates
-
-## 🌐 API References
+### 🌐 API References
 * The Movie Database (TMDB) API.
 * NewsAPI.
 
-## 👥 Development Team
+### 👥 Development Team
 * Keamogetsoe Sele - Team Leader & Back-End Developer.
 * Mlungisi Mvubu - API Management & Back-End Developer.
 * Cynthia Motaung - Documentation & Version Control.
 * Siyamthanda Dlakavu - UI/UX Designer & Front-End Developer.
 
-## 📄 License
+### 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🤝 Contributing
+### 🤝 Contributing
 Contributions, issues, and feature requests are welcome! Feel free to check issues page.
 
 ## 📞 Support
