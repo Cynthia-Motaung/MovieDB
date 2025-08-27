@@ -617,44 +617,7 @@
                             </div>
                         </div>
 
-                        {/* News Section */}
-                        <div className="news-section">
-                            <div className="section-header">
-                                <h2 className="section-title">
-                                    <i className="fas fa-newspaper"></i> Latest News
-                                </h2>
-                                <a
-                                    href="#"
-                                    className="view-all"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        window.scrollTo(0, 0);
-                                        setCurrentPage("news");
-                                    }}>
-                                    View All <i className="fas fa-chevron-right"></i>
-                                </a>
-                            </div>
-                            <div className="news-grid">
-                                {news.map((item, index) => (
-                                    <div key={index} className="news-card">
-                                        <img
-                                            src={item.urlToImage || PLACEHOLDER_IMAGE}
-                                            alt={item.title}
-                                            className="news-image"
-                                        />
-                                        <div className="news-content">
-                                            <div className="news-date">
-                                                {new Date(item.publishedAt).toLocaleDateString()}
-                                            </div>
-                                            <h3 className="news-title">{item.title}</h3>
-                                            <p className="news-excerpt">
-                                                {item.description || "No description available"}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                      
 
                         {selectedItem && (
                             <TrailerModal item={selectedItem} type={itemType} onClose={handleCloseTrailer} />
