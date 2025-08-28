@@ -89,7 +89,7 @@
                         <div className="nav-container">
                             <div className="logo" onClick={() => handleNavigation("home")}>
                                 <img src="images/video.png" alt="Reel Trailers Logo" className="logo-icon" />
-                                Reel Trailerssssss
+                                Reel Trailers
                             </div>
 
                             <button className="mobile-menu-btn" onClick={toggleMenu}>
@@ -1008,48 +1008,62 @@
                     </div>
                 );
             }
-
             
+            function Footer({ setCurrentPage }) {
+    const handleFooterNavigation = (page) => {
+        setCurrentPage(page);
+        // Scroll to top when navigating
+        window.scrollTo(0, 0);
+    };
 
-            function Footer() {
-                return (
-                    <footer className="site-footer">
-                        <div className="footer-content">
-                            <div className="footer-section about">
-                                <h3>About Reel Trailers</h3>
-                                <p>
-                                    Your ultimate destination for the latest movie trailers & tv shows, and
-                                    celebrity buzz. We bring the world of cinema to your fingertips.
-                                </p>
-                            </div>
-                            <div className="footer-section links">
-                                <h3>Quick Links</h3>
-                                <ul>
-                                    <li>
-                                        <a href="#">Home</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">Movies</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">TV Shows</a>
-                                    </li>
-                                       <li>
-                                        <a href="#">Celebs</a>
-                                    </li>
-                                    <li>
-                                        <a href="#">About</a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div className="footer-bottom">
-                            <p>&copy; 2025 Reel Trailers. All Rights Reserved.</p>
-                        </div>
-                    </footer>
-                );
-            }
-
+    return (
+        <footer className="site-footer">
+            <div className="footer-content">
+                <div className="footer-section about">
+                    <h3>About Reel Trailers</h3>
+                    <p>
+                        Your ultimate destination for the latest movie trailers & tv shows, and
+                        celebrity buzz. We bring the world of cinema to your fingertips.
+                    </p>
+                </div>
+                <div className="footer-section links">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li>
+                            <a href="#" onClick={(e) => { e.preventDefault(); handleFooterNavigation("home"); }}>
+                                Home
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onClick={(e) => { e.preventDefault(); handleFooterNavigation("movies"); }}>
+                                Movies
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onClick={(e) => { e.preventDefault(); handleFooterNavigation("tvshows"); }}>
+                                TV Shows
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onClick={(e) => { e.preventDefault(); handleFooterNavigation("celebs"); }}>
+                                Celebs
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onClick={(e) => { e.preventDefault(); handleFooterNavigation("about"); }}>
+                                About
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div className="footer-bottom">
+                <p>&copy; 2025 Reel Trailers. All Rights Reserved.</p>
+            </div>
+        </footer>
+    );
+}
+            
             // About Page Component
             function AboutPage() {
                 return (
@@ -1174,34 +1188,35 @@
             }
 
             // Main App component
-            function App() {
-                const [currentPage, setCurrentPage] = useState("home");
+          // Main App component
+function App() {
+    const [currentPage, setCurrentPage] = useState("home");
 
-                const renderPage = () => {
-                    switch (currentPage) {
-                        case "home":
-                            return <HomePage setCurrentPage={setCurrentPage} />;
-                        case "movies":
-                            return <MoviesPage />;
-                        case "tvshows":
-                            return <TVShowsPage />;
-                        case "celebs":
-                            return <CelebsPage />;
-                        case "about":
-                            return <AboutPage />;
-                        default:
-                            return <HomePage setCurrentPage={setCurrentPage} />;
-                    }
-                };
+    const renderPage = () => {
+        switch (currentPage) {
+            case "home":
+                return <HomePage setCurrentPage={setCurrentPage} />;
+            case "movies":
+                return <MoviesPage />;
+            case "tvshows":
+                return <TVShowsPage />;
+            case "celebs":
+                return <CelebsPage />;
+            case "about":
+                return <AboutPage />;
+            default:
+                return <HomePage setCurrentPage={setCurrentPage} />;
+        }
+    };
 
-                return (
-                    <div>
-                        <NavBar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-                        <div className="container">{renderPage()}</div>
-                        <Footer />
-                    </div>
-                );
-            }
+    return (
+        <div>
+            <NavBar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+            <div className="container">{renderPage()}</div>
+            <Footer setCurrentPage={setCurrentPage} />
+        </div>
+    );
+}
 
             // Render the App
             ReactDOM.render(<App />, document.getElementById("root"));
