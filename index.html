@@ -11,6 +11,32 @@
         <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
         <style>
+            /* Stats animation styles */
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #00d4ff;
+    transition: all 0.3s ease;
+}
+
+.stat-card {
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card:hover .stat-value {
+    color: #ff6b6b;
+}
+
+/* Ensure stats are visible for animation */
+.stats-section {
+    min-height: 200px;
+}    
+        </style>
+        <style>
                  /* Carousel Styles */
         .carousel-container {
             position: relative;
@@ -659,31 +685,33 @@
                                 ))}
                             </div>
                         </div>
-
-                        {/* Stats Section */}
-                        <div className="stats-section">
-                            <h2 className="section-title">
-                                <i className="fas fa-chart-line"></i> Reel Trailers Stats
-                            </h2>
-                            <div className="stats-grid">
-                                <div className="stat-card">
-                                    <div className="stat-icon">
-                                        <i className="fas fa-film"></i>
-                                    </div>
-                                    <div className="stat-value">10,000+</div>
-                                    <div className="stat-label">Movies</div>
-                                </div>
-                                <div className="stat-card">
-                                    <div className="stat-icon">
-                                        <i className="fas fa-tv"></i>
-                                    </div>
-                                    <div className="stat-value">5,000+</div>
-                                    <div className="stat-label">TV Shows</div>
-                                </div>
-                            </div>
-                        </div>
-
-                      
+                        
+             {/* Stats Section */}
+<div className="stats-section">
+    <h2 className="section-title">
+        <i className="fas fa-chart-line"></i> Reel Trailers Stats
+    </h2>
+    <div className="stats-grid">
+        <div className="stat-card">
+            <div className="stat-icon">
+                <i className="fas fa-film"></i>
+            </div>
+            <div className="stat-value">
+                <CountUp end={10000} duration={3} separator="," />+
+            </div>
+            <div className="stat-label">Movies</div>
+        </div>
+        <div className="stat-card">
+            <div className="stat-icon">
+                <i className="fas fa-tv"></i>
+            </div>
+            <div className="stat-value">
+                <CountUp end={5000} duration={3} separator="," />+
+            </div>
+            <div className="stat-label">TV Shows</div>
+        </div>
+    </div>
+</div>
 
                         {selectedItem && (
                             <TrailerModal item={selectedItem} type={itemType} onClose={handleCloseTrailer} />
@@ -1074,6 +1102,47 @@
                     </div>
                 );
             }
+
+            // CountUp Component for animated numbers
+function CountUp({ end, duration = 2, separator = "" }) {
+    const [count, setCount] = useState(0);
+    const [hasAnimated, setHasAnimated] = useState(false);
+
+    useEffect(() => {
+        // Only animate when component is in viewport
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting && !hasAnimated) {
+                    setHasAnimated(true);
+                    
+                    let startTime = null;
+                    const animate = (timestamp) => {
+                        if (!startTime) startTime = timestamp;
+                        const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
+                        
+                        setCount(Math.floor(progress * end));
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        }
+                    };
+                    
+                    requestAnimationFrame(animate);
+                }
+            },
+            { threshold: 0.5 } // Trigger when 50% of element is visible
+        );
+
+        const element = document.querySelector(`.stat-value`);
+        if (element) {
+            observer.observe(element);
+        }
+
+        return () => observer.disconnect();
+    }, [end, duration, hasAnimated]);
+
+    return <span>{count.toLocaleString()}{separator}</span>;
+}
             
             function Footer({ setCurrentPage }) {
     const handleFooterNavigation = (page) => {
