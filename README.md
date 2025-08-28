@@ -2,7 +2,11 @@
 
 Reel Trailers is a modern, responsive web application built with React that allows users to discover movies, TV shows, celebrities, and entertainment news. The platform features an intuitive interface with trailer viewing capabilities, detailed information, and powerful search functionality.
 
-https://img.shields.io/badge/React-18.2.0-blue https://img.shields.io/badge/License-MIT-green https://img.shields.io/badge/Status-Live-brightgreen
+## Screenshots
+<img width="1587" height="625" alt="image" src="https://github.com/user-attachments/assets/2bf47461-70e8-4e23-9896-d3bab83e3736" />
+
+<img width="1565" height="690" alt="image" src="https://github.com/user-attachments/assets/ca91ef71-fa7e-46fc-8a17-7aebbb30ae24" />
+
 
 ## ✨ Features
 * 🎥 Movie Discovery: Browse popular, trending, and genre-specific movies
